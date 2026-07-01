@@ -1,5 +1,6 @@
 package com.example.gym.utils;
 
+import com.example.gym.entities.TraineeEntity;
 import com.example.gym.entities.UserEntity;
 
 public class ValidationUtility
@@ -13,6 +14,18 @@ public class ValidationUtility
 
         if (user.getLastName() == null || user.getLastName().isBlank()) {
             throw new IllegalArgumentException("Last name is required");
+        }
+    }
+
+    public static void validateTraineeProfile(TraineeEntity trainee) {
+        validateUser(trainee);
+
+        if (trainee.getDateOfBirth() == null) {
+            throw new IllegalArgumentException("Date of birth is required");
+        }
+
+        if (trainee.getAddress() == null || trainee.getAddress().isBlank()) {
+            throw new IllegalArgumentException("Address is required");
         }
     }
 }

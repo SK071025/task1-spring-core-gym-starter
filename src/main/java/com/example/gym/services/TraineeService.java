@@ -131,14 +131,6 @@ public class TraineeService {
     }
 
     private void validateTrainee(TraineeEntity trainee) {
-        ValidationUtility.validateUser(trainee);
-
-        if (trainee.getDateOfBirth() == null) {
-            throw new IllegalArgumentException("Date of birth is required");
-        }
-
-        if (trainee.getAddress() == null || trainee.getAddress().isBlank()) {
-            throw new IllegalArgumentException("Address is required");
-        }
+        ValidationUtility.validateTraineeProfile(trainee);
     }
 }
