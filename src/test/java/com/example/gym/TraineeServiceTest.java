@@ -55,6 +55,26 @@ class TraineeServiceTest {
     }
 
     @Test
+    void createTrainee_shouldRejectMissingAddress() {
+        TraineeEntity t = buildTrainee(null, "John", "Doe");
+        t.setAddress(null);
+
+        assertThatThrownBy(() -> traineeService.createTrainee(t))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Address is required");
+    }
+
+    @Test
+    void createTrainee_shouldRejectMissingDateOfBirth() {
+        TraineeEntity t = buildTrainee(null, "John", "Doe");
+        t.setDateOfBirth(null);
+
+        assertThatThrownBy(() -> traineeService.createTrainee(t))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Date of birth is required");
+    }
+
+    @Test
     void updateOwnProfile_shouldUpdateFields() {
         TraineeEntity existing = buildTrainee(1L,"Old","User");
         existing.setUsername("john.doe");
@@ -69,6 +89,36 @@ class TraineeServiceTest {
 
         assertThat(result.getFirstName()).isEqualTo("John");
         verify(traineeDao).update(existing);
+    }
+
+    @Test
+    void updateOwnProfile_shouldRejectMissingAddress() {
+        TraineeEntity existing = buildTrainee(1L, "Old", "User");
+        existing.setUsername("john.doe");
+
+        when(traineeDao.findByUsername("john.doe")).thenReturn(Optional.of(existing));
+
+        UpdateTraineeProfileRequest req = new UpdateTraineeProfileRequest(
+                "John", "Smith", LocalDate.of(1992, 2, 2), " ");
+
+        assertThatThrownBy(() -> traineeService.updateOwnProfile("john.doe", req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Address is required");
+    }
+
+    @Test
+    void updateOwnProfile_shouldRejectMissingDateOfBirth() {
+        TraineeEntity existing = buildTrainee(1L, "Old", "User");
+        existing.setUsername("john.doe");
+
+        when(traineeDao.findByUsername("john.doe")).thenReturn(Optional.of(existing));
+
+        UpdateTraineeProfileRequest req = new UpdateTraineeProfileRequest(
+                "John", "Smith", null, "New Address");
+
+        assertThatThrownBy(() -> traineeService.updateOwnProfile("john.doe", req))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Date of birth is required");
     }
 
     @Test

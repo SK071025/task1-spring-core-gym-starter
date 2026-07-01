@@ -44,6 +44,7 @@ public class TraineeService {
 
     @Transactional
     public TraineeEntity createTrainee(TraineeEntity trainee) {
+        validateTrainee(trainee);
         userAccountService.initializeNewAccount(trainee);
         traineeDao.create(trainee);
         return trainee;
@@ -58,7 +59,7 @@ public class TraineeService {
         trainee.setDateOfBirth(request.getDateOfBirth());
         trainee.setAddress(request.getAddress());
 
-        ValidationUtility.validateUser(trainee);
+        validateTrainee(trainee);
         return traineeDao.update(trainee);
     }
 
@@ -127,5 +128,17 @@ public class TraineeService {
     private TraineeEntity findTrainee(String username) {
         return traineeDao.findByUsername(username)
                 .orElseThrow(() -> new EntityNotFoundException("Trainee not found: " + username));
+    }
+
+    private void validateTrainee(TraineeEntity trainee) {
+        ValidationUtility.validateUser(trainee);
+
+        if (trainee.getDateOfBirth() == null) {
+            throw new IllegalArgumentException("Date of birth is required");
+        }
+
+        if (trainee.getAddress() == null || trainee.getAddress().isBlank()) {
+            throw new IllegalArgumentException("Address is required");
+        }
     }
 }

@@ -90,12 +90,4 @@ class TrainingServiceTest {
 
         assertThat(trainingService.getAllTrainings()).hasSize(2);
     }
-
-    @Test
-    void getTrainingsByTrainee_shouldDelegate() {
-        when(trainingDao.findByTraineeId(10L)).thenReturn(List.of(buildTraining(1L,"Yoga")));
-
-        assertThat(trainingService.getTrainingsByTrainee(10L)).hasSize(1);
-        verify(trainingDao).findByTraineeId(10L);
-    }
 }

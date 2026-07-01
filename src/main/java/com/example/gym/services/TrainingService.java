@@ -40,16 +40,6 @@ public class TrainingService {
         return trainingDao.findAll();
     }
 
-    public List<TrainingEntity> getTrainingsByTrainee(Long traineeId) {
-        logger.debug("Getting trainings for trainee ID: {}", traineeId);
-        return trainingDao.findByTraineeId(traineeId);
-    }
-
-    public List<TrainingEntity> getTrainingsByTrainer(Long trainerId) {
-        logger.debug("Getting trainings for trainer ID: {}", trainerId);
-        return trainingDao.findByTrainerId(trainerId);
-    }
-
     public List<TrainingEntity> getTraineeTrainingsByCriteria(
             String traineeUsername,
             TraineeTrainingSearchCriteria criteria) {

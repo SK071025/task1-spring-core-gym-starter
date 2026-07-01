@@ -20,30 +20,6 @@ public class TrainingDaoImpl extends BaseDaoImpl<TrainingEntity> implements Trai
     }
 
     @Override
-    public List<TrainingEntity> findByTraineeId(Long traineeId) {
-        String jpql = "SELECT t FROM TrainingEntity t WHERE t.trainee.id = :traineeId";
-        return entityManager.createQuery(jpql, TrainingEntity.class)
-                .setParameter("traineeId", traineeId)
-                .getResultList();
-    }
-
-    @Override
-    public List<TrainingEntity> findByTrainerId(Long trainerId) {
-        String jpql = "SELECT t FROM TrainingEntity t WHERE t.trainer.id = :trainerId";
-        return entityManager.createQuery(jpql, TrainingEntity.class)
-                .setParameter("trainerId", trainerId)
-                .getResultList();
-    }
-
-    @Override
-    public List<TrainingEntity> findByTrainingType(Long trainingTypeId) {
-        String jpql = "SELECT t FROM TrainingEntity t WHERE t.trainingType.id = :trainingTypeId";
-        return entityManager.createQuery(jpql, TrainingEntity.class)
-                .setParameter("trainingTypeId", trainingTypeId)
-                .getResultList();
-    }
-
-    @Override
     public List<TrainingEntity> findTraineeTrainingsByCriteria(
             String traineeUsername,
             TraineeTrainingSearchCriteria criteria) {
