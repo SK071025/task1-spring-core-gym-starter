@@ -1,68 +1,26 @@
 package com.example.gym.services;
 
 import com.example.gym.daos.TrainerDao;
-import com.example.gym.models.Trainer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.gym.daos.TrainingTypeDao;
+import com.example.gym.dtos.UpdateTrainerProfileRequest;
+import com.example.gym.entities.TrainerEntity;
+import com.example.gym.entities.TrainingTypeEntity;
+import com.example.gym.utils.ValidationUtility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Optional;
 
 @Service
+@Transactional(readOnly = true)
 public class TrainerService {
-    private static final Logger logger = LoggerFactory.getLogger(TrainerService.class);
 
     private TrainerDao trainerDao;
-    private CredentialsService credentialsService;
-
-    public Trainer createTrainer(Trainer trainer) {
-        logger.info("Creating new trainer: {} {}", trainer.getFirstName(), trainer.getLastName());
-
-        String username = generateUniqueUsername(trainer.getFirstName(), trainer.getLastName());
-        String password = credentialsService.generatePassword();
-
-        trainer.setUsername(username);
-        trainer.setPassword(password);
-
-        trainerDao.save(trainer);
-        logger.info("Created trainer with username: {}", username);
-        return trainer;
-    }
-
-    public Trainer updateTrainer(Trainer trainer) {
-        logger.info("Updating trainer with ID: {}", trainer.getId());
-        trainerDao.save(trainer);
-        return trainer;
-    }
-
-    public Trainer getTrainer(Long id) {
-        logger.debug("Getting trainer with ID: {}", id);
-        return trainerDao.findById(id);
-    }
-
-    public List<Trainer> getAllTrainers() {
-        logger.debug("Getting all trainers");
-        return trainerDao.findAll();
-    }
-
-    private String generateUniqueUsername(String firstName, String lastName) {
-        String baseUsername = firstName + "." + lastName;
-        boolean exists = trainerDao.findByUsername(baseUsername).isPresent();
-
-        if (!exists) {
-            return baseUsername;
-        }
-
-        int serialNumber = 1;
-        String username;
-        do {
-            username = baseUsername + serialNumber;
-            serialNumber++;
-        } while (trainerDao.findByUsername(username).isPresent());
-
-        return username;
-    }
+    private TrainingTypeDao trainingTypeDao;
+    private UserAccountService userAccountService;
 
     @Autowired
     public void setTrainerDao(TrainerDao trainerDao) {
@@ -70,7 +28,81 @@ public class TrainerService {
     }
 
     @Autowired
-    public void setAuthenticationService(CredentialsService credentialsService) {
-        this.credentialsService = credentialsService;
+    public void setTrainingTypeDao(TrainingTypeDao trainingTypeDao) {
+        this.trainingTypeDao = trainingTypeDao;
+    }
+
+    @Autowired
+    public void setUserAccountService(UserAccountService userAccountService) {
+        this.userAccountService = userAccountService;
+    }
+
+    @Transactional
+    public TrainerEntity createTrainer(TrainerEntity trainer) {
+        validateTrainer(trainer);
+        userAccountService.initializeNewAccount(trainer);
+        trainerDao.create(trainer);
+        return trainer;
+    }
+
+    @Transactional
+    public TrainerEntity updateOwnProfile(String username, UpdateTrainerProfileRequest request) {
+        TrainerEntity trainer = findTrainer(username);
+
+        trainer.setFirstName(request.getFirstName());
+        trainer.setLastName(request.getLastName());
+
+        TrainingTypeEntity specialization = trainingTypeDao.findById(request.getSpecializationId())
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Training type not found: " + request.getSpecializationId()));
+        trainer.setSpecialization(specialization);
+
+        validateTrainer(trainer);
+        return trainerDao.update(trainer);
+    }
+
+    public TrainerEntity getTrainerByUsername(String username) {
+        return findTrainer(username);
+    }
+
+    public List<TrainerEntity> getAllTrainers() {
+        return trainerDao.findAll();
+    }
+
+    @Transactional
+    public void changePassword(String username, String newPassword) {
+        TrainerEntity trainer = findTrainer(username);
+        userAccountService.changePassword(trainer, newPassword);
+        trainerDao.update(trainer);
+    }
+
+    @Transactional
+    public void activateTrainer(String username) {
+        TrainerEntity trainer = findTrainer(username);
+        userAccountService.activate(trainer, "Trainer " + username);
+        trainerDao.update(trainer);
+    }
+
+    @Transactional
+    public void deactivateTrainer(String username) {
+        TrainerEntity trainer = findTrainer(username);
+        userAccountService.deactivate(trainer, "Trainer " + username);
+        trainerDao.update(trainer);
+    }
+
+    public Optional<TrainingTypeEntity> getTrainingTypeByName(String name) {
+        return trainingTypeDao.findByName(name);
+    }
+
+    private void validateTrainer(TrainerEntity trainer) {
+        ValidationUtility.validateUser(trainer);
+        if (trainer.getSpecialization() == null) {
+            throw new IllegalArgumentException("Specialization is required");
+        }
+    }
+
+    private TrainerEntity findTrainer(String username) {
+        return trainerDao.findByUsername(username)
+                .orElseThrow(() -> new EntityNotFoundException("Trainer not found: " + username));
     }
 }

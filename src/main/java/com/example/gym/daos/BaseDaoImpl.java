@@ -1,55 +1,55 @@
 package com.example.gym.daos;
 
-import com.example.gym.util.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 
 public abstract class BaseDaoImpl<T> implements BaseDao<T> {
     protected final Logger logger = LoggerFactory.getLogger(getClass());
 
-    protected abstract Map<Long, T> getStorage();
-    protected abstract void setId(T entity, Long id);
-    protected abstract Long getId(T entity);
-    protected abstract Long generateNextId();
+    @PersistenceContext
+    protected EntityManager entityManager;
+
+    protected abstract Class<T> getEntityClass();
 
     @Override
-    public void save(T entity) {
-        if (getId(entity) == null) {
-            Long newId = generateNextId();
-            setId(entity, newId);
-        }
-        getStorage().put(getId(entity), entity);
-        logger.info("Saved entity with ID: {}", getId(entity));
+    public void create(T entity) {
+        entityManager.persist(entity);
     }
 
     @Override
-    public T findById(Long id) {
-        logger.debug("Finding entity by ID: {}", id);
-        return getStorage().get(id);
+    public T update(T entity) {
+        return entityManager.contains(entity) ? entity : entityManager.merge(entity);
+    }
+
+    @Override
+    public Optional<T> findById(Long id) {
+        T entity = entityManager.find(getEntityClass(), id);
+        return Optional.ofNullable(entity);
     }
 
     @Override
     public List<T> findAll() {
-        logger.debug("Finding all entities");
-        return new ArrayList<>(getStorage().values());
+        String jpql = "SELECT e FROM " + getEntityClass().getSimpleName() + " e";
+        TypedQuery<T> query = entityManager.createQuery(jpql, getEntityClass());
+        return query.getResultList();
     }
 
     @Override
     public void delete(Long id) {
-        T removed = getStorage().remove(id);
-        if (removed != null) {
-            logger.info("Deleted entity with ID: {}", id);
-        } else {
-            logger.warn("Attempted to delete non-existent entity with ID: {}", id);
+        T entity = entityManager.find(getEntityClass(), id);
+        if (entity != null) {
+            entityManager.remove(entity);
         }
     }
 
     @Override
     public boolean existsById(Long id) {
-        return getStorage().containsKey(id);
+        return findById(id).isPresent();
     }
 }

@@ -1,9 +1,10 @@
 package com.example.gym.daos;
 
-import com.example.gym.models.Trainee;
+import com.example.gym.entities.TraineeEntity;
 import java.util.*;
 
-public interface TraineeDao extends BaseDao<Trainee> {
-    Optional<Trainee> findByUsername(String username);
-    List<Trainee> findByFirstNameAndLastName(String firstName, String lastName);
+public interface TraineeDao extends BaseDao<TraineeEntity> {
+    Optional<TraineeEntity> findByUsername(String username);
+
+    List<TraineeEntity> findByFirstNameAndLastName(String firstName, String lastName);
 }

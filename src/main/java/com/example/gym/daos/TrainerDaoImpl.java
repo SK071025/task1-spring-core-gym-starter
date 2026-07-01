@@ -1,65 +1,48 @@
 package com.example.gym.daos;
 
-import com.example.gym.models.Trainer;
-import com.example.gym.util.IdGenerator;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.example.gym.entities.TrainerEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.TypedQuery;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
-public class TrainerDaoImpl extends BaseDaoImpl<Trainer> implements TrainerDao {
-
-    @Autowired
-    @Qualifier("trainerStorage")
-    private Map<Long, Trainer> trainerStorage;
+public class TrainerDaoImpl extends BaseDaoImpl<TrainerEntity> implements TrainerDao {
 
     @Override
-    protected Map<Long, Trainer> getStorage() {
-        return trainerStorage;
+    protected Class<TrainerEntity> getEntityClass() {
+        return TrainerEntity.class;
     }
 
     @Override
-    protected void setId(Trainer entity, Long id) {
-        entity.setId(id);
-    }
-
-    @Override
-    protected Long getId(Trainer entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected Long generateNextId() {
-        return IdGenerator.nextTrainerId();
-    }
-
-    @Override
-    public Optional<Trainer> findByUsername(String username) {
+    public Optional<TrainerEntity> findByUsername(String username) {
         logger.debug("Finding trainer by username: {}", username);
-        return trainerStorage.values().stream()
-                .filter(trainer -> username.equals(trainer.getUsername()))
-                .findFirst();
+        String jpql = "SELECT t FROM TrainerEntity t LEFT JOIN FETCH t.specialization WHERE t.username = :username";
+        TypedQuery<TrainerEntity> query = entityManager.createQuery(jpql, TrainerEntity.class);
+        query.setParameter("username", username);
+
+        List<TrainerEntity> results = query.getResultList();
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     @Override
-    public List<Trainer> findBySpecialization(String specialization) {
+    public List<TrainerEntity> findBySpecialization(String specialization) {
         logger.debug("Finding trainers by specialization: {}", specialization);
-        return trainerStorage.values().stream()
-                .filter(trainer -> specialization.equals(trainer.getSpecialization()))
-                .collect(Collectors.toList());
+        String jpql = "SELECT t FROM TrainerEntity t JOIN t.specialization s WHERE s.trainingTypeName = :specialization";
+        TypedQuery<TrainerEntity> query = entityManager.createQuery(jpql, TrainerEntity.class);
+        query.setParameter("specialization", specialization);
+        return query.getResultList();
     }
 
     @Override
-    public List<Trainer> findByFirstNameAndLastName(String firstName, String lastName) {
+    public List<TrainerEntity> findByFirstNameAndLastName(String firstName, String lastName) {
         logger.debug("Finding trainers by name: {} {}", firstName, lastName);
-        return trainerStorage.values().stream()
-                .filter(trainer -> firstName.equals(trainer.getFirstName()) &&
-                        lastName.equals(trainer.getLastName()))
-                .collect(Collectors.toList());
+        String jpql = "SELECT t FROM TrainerEntity t WHERE t.firstName = :firstName AND t.lastName = :lastName";
+        TypedQuery<TrainerEntity> query = entityManager.createQuery(jpql, TrainerEntity.class);
+        query.setParameter("firstName", firstName);
+        query.setParameter("lastName", lastName);
+        return query.getResultList();
     }
 }
