@@ -1,58 +1,39 @@
 package com.example.gym.daos;
 
-import com.example.gym.models.Trainee;
-import com.example.gym.util.IdGenerator;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import com.example.gym.entities.TraineeEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.TypedQuery;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Repository
-public class TraineeDaoImpl extends BaseDaoImpl<Trainee> implements TraineeDao {
-
-    @Autowired
-    @Qualifier("traineeStorage")
-    private Map<Long, Trainee> traineeStorage;
+public class TraineeDaoImpl extends BaseDaoImpl<TraineeEntity> implements TraineeDao {
 
     @Override
-    protected Map<Long, Trainee> getStorage() {
-        return traineeStorage;
+    protected Class<TraineeEntity> getEntityClass() {
+        return TraineeEntity.class;
     }
 
     @Override
-    protected void setId(Trainee entity, Long id) {
-        entity.setId(id);
-    }
-
-    @Override
-    protected Long getId(Trainee entity) {
-        return entity.getId();
-    }
-
-    @Override
-    protected Long generateNextId() {
-        return IdGenerator.nextTraineeId();
-    }
-
-    @Override
-    public Optional<Trainee> findByUsername(String username) {
+    public Optional<TraineeEntity> findByUsername(String username) {
         logger.debug("Finding trainee by username: {}", username);
-        return traineeStorage.values().stream()
-                .filter(trainee -> username.equals(trainee.getUsername()))
-                .findFirst();
+        String jpql = "SELECT t FROM TraineeEntity t WHERE t.username = :username";
+        TypedQuery<TraineeEntity> query = entityManager.createQuery(jpql, TraineeEntity.class);
+        query.setParameter("username", username);
+
+        List<TraineeEntity> results = query.getResultList();
+        return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
     }
 
     @Override
-    public List<Trainee> findByFirstNameAndLastName(String firstName, String lastName) {
+    public List<TraineeEntity> findByFirstNameAndLastName(String firstName, String lastName) {
         logger.debug("Finding trainees by name: {} {}", firstName, lastName);
-        return traineeStorage.values().stream()
-                .filter(trainee -> firstName.equals(trainee.getFirstName()) &&
-                        lastName.equals(trainee.getLastName()))
-                .collect(Collectors.toList());
+        String jpql = "SELECT t FROM TraineeEntity t WHERE t.firstName = :firstName AND t.lastName = :lastName";
+        TypedQuery<TraineeEntity> query = entityManager.createQuery(jpql, TraineeEntity.class);
+        query.setParameter("firstName", firstName);
+        query.setParameter("lastName", lastName);
+        return query.getResultList();
     }
 }
-
